@@ -42,3 +42,7 @@ bin/
 ### Cmake ###
 cmake-build-debug
 cmake-build-release
+
+### Binary Files ###
+*.dll
+*.jar
