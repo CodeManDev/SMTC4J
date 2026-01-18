@@ -30,23 +30,23 @@ static std::string base64Encode(const std::vector<uint8_t>& data) {
 
 static std::string getThumbnailBase64(GlobalSystemMediaTransportControlsSessionMediaProperties const& mediaProps) {
     try {
-        auto thumbnail = mediaProps.Thumbnail();
+        const auto thumbnail = mediaProps.Thumbnail();
         if (!thumbnail) return "";
 
-        auto stream = thumbnail.OpenReadAsync().get();
+        const auto stream = thumbnail.OpenReadAsync().get();
         if (!stream) return "";
 
-        auto size = stream.Size();
+        const auto size = stream.Size();
         if (size == 0) return "";
 
         std::vector<uint8_t> buffer(size);
-        DataReader reader(stream);
+        const DataReader reader(stream);
         reader.LoadAsync(static_cast<uint32_t>(size)).get();
         reader.ReadBytes(buffer);
 
         return base64Encode(buffer);
     } catch (...) {
-        return ""; // return empty string on any error
+        return "";
     }
 }
 
@@ -60,12 +60,12 @@ Java_dev_codeman_smtc4j_SMTC4J_getPlaybackState(JNIEnv* env, jclass) {
         } catch (const winrt::hresult_invalid_argument&) {
         }
 
-        auto manager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
-        auto session = manager.GetCurrentSession();
+        const auto manager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
+        const auto session = manager.GetCurrentSession();
         if (!session) return env->NewStringUTF("{}");
 
-        auto info = session.GetPlaybackInfo();
-        auto status = info.PlaybackStatus();
+        const auto info = session.GetPlaybackInfo();
+        const auto status = info.PlaybackStatus();
 
         int stateCode = 0;
         switch (status) {
@@ -75,29 +75,17 @@ Java_dev_codeman_smtc4j_SMTC4J_getPlaybackState(JNIEnv* env, jclass) {
             default: stateCode = -1; break;
         }
 
-        auto timeline = session.GetTimelineProperties();
-        double smtcPosition = timeline.Position().count() / 10'000'000.0; // seconds
+        const auto timeline = session.GetTimelineProperties();
+        double positionSec = timeline.Position().count() / 10'000'000.0; // to seconds
 
-        static auto cachedLastTimeLineUpdate = timeline.LastUpdatedTime().time_since_epoch();
-        auto lastTimeLineUpdate = timeline.LastUpdatedTime().time_since_epoch();
-
-        static double cachedPosition = smtcPosition;
-        static auto lastTime = std::chrono::steady_clock::now();
-        auto now = std::chrono::steady_clock::now();
-
-        double delta = std::chrono::duration<double>(now - lastTime).count(); // seconds
-        lastTime = now;
-
-        if (lastTimeLineUpdate != cachedLastTimeLineUpdate || stateCode != 2) {
-            cachedPosition = smtcPosition;
-            cachedLastTimeLineUpdate = lastTimeLineUpdate;
-        } else {
-            cachedPosition += delta;
+        if (stateCode == 2) { // update position based on elapsed time while playing
+            const auto lastUpdated = timeline.LastUpdatedTime().time_since_epoch();
+            const auto now = winrt::clock::now().time_since_epoch();
+            const auto deltaTicks = now.count() - lastUpdated.count();
+            positionSec += deltaTicks / 10'000'000.0; // to seconds
         }
 
-        double positionSec = cachedPosition;
-
-        std::string json = "{"
+        const std::string json = "{"
             "\"stateCode\":" + std::to_string(stateCode) + ","
             "\"position\":" + std::to_string(positionSec) +
         "}";
@@ -105,10 +93,10 @@ Java_dev_codeman_smtc4j_SMTC4J_getPlaybackState(JNIEnv* env, jclass) {
         return env->NewStringUTF(json.c_str());
 
     } catch (const winrt::hresult_error& e) {
-        std::string err = std::string("{\"error\":\"") + winrt::to_string(e.message()) + "\"}";
+        std::string err = std::string(R"({"error":")") + winrt::to_string(e.message()) + "\"}";
         return env->NewStringUTF(err.c_str());
     } catch (...) {
-        return env->NewStringUTF("{\"error\":\"unknown exception\"}");
+        return env->NewStringUTF(R"({"error":"unknown exception"})");
     }
 }
 
@@ -120,18 +108,18 @@ Java_dev_codeman_smtc4j_SMTC4J_getMediaInfo(JNIEnv* env, jclass) {
         } catch (const winrt::hresult_invalid_argument&) {
         }
 
-        auto manager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
-        auto session = manager.GetCurrentSession();
+        const auto manager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
+        const auto session = manager.GetCurrentSession();
         if (!session) return env->NewStringUTF("{}");
 
-        auto mediaProps = session.TryGetMediaPropertiesAsync().get();
-        auto timeline = session.GetTimelineProperties();
+        const auto mediaProps = session.TryGetMediaPropertiesAsync().get();
+        const auto timeline = session.GetTimelineProperties();
 
-        double durationSec = timeline.EndTime().count() / 10'000'000.0;
-        std::string thumbnailBase64 = getThumbnailBase64(mediaProps);
-        auto sourceApp = winrt::to_string(session.SourceAppUserModelId());
+        const double durationSec = timeline.EndTime().count() / 10'000'000.0;
+        const std::string thumbnailBase64 = getThumbnailBase64(mediaProps);
+        const auto sourceApp = winrt::to_string(session.SourceAppUserModelId());
 
-        std::string json = "{"
+        const std::string json = "{"
             "\"title\":\"" + winrt::to_string(mediaProps.Title()) + "\","
             "\"artist\":\"" + winrt::to_string(mediaProps.Artist()) + "\","
             "\"album\":\"" + winrt::to_string(mediaProps.AlbumTitle()) + "\","
@@ -143,10 +131,10 @@ Java_dev_codeman_smtc4j_SMTC4J_getMediaInfo(JNIEnv* env, jclass) {
         return env->NewStringUTF(json.c_str());
 
     } catch (const winrt::hresult_error& e) {
-        std::string err = std::string("{\"error\":\"") + winrt::to_string(e.message()) + "\"}";
+        const std::string err = std::string(R"({"error":")") + winrt::to_string(e.message()) + "\"}";
         return env->NewStringUTF(err.c_str());
     } catch (...) {
-        return env->NewStringUTF("{\"error\":\"unknown exception\"}");
+        return env->NewStringUTF(R"({"error":"unknown exception"})");
     }
 }
 
