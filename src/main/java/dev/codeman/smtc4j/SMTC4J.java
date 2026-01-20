@@ -84,7 +84,14 @@ public class SMTC4J {
         checkIsLoaded();
 
         ScheduledExecutorService exec = getScheduler();
-        exec.scheduleAtFixedRate(SMTC4J::updateCache, 0, intervalMillis, TimeUnit.MILLISECONDS);
+        exec.scheduleAtFixedRate(() -> {
+            try {
+                updateCache();
+            } catch (Exception e) {
+                System.err.println("Error updating SMTC4J cache: " + e.getMessage());
+                e.printStackTrace(System.err);
+            }
+        }, 0, intervalMillis, TimeUnit.MILLISECONDS);
     }
 
     public static MediaInfo parsedMediaInfo() {
@@ -130,7 +137,14 @@ public class SMTC4J {
     public static void scheduleKeyPress(MediaKey key) {
         checkIsLoaded();
 
-        getScheduler().execute(() -> pressKey(key));
+        getScheduler().execute(() -> {
+            try {
+                pressKey(key);
+            } catch (Exception e) {
+                System.err.println("Error pressing media key: " + e.getMessage());
+                e.printStackTrace(System.err);
+            }
+        });
     }
 
     private static void checkIsLoaded() {
