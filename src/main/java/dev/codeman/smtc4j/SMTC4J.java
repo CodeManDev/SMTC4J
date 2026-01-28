@@ -26,6 +26,9 @@ public class SMTC4J {
     public static boolean load() {
         if (loaded) return true;
 
+        if (!System.getProperty("os.name").toLowerCase().contains("win"))
+            throw new UnsupportedOperationException("SMTC4J is Windows-only");
+
         String dllPath = "/native/SMTC4J.dll";
         try (InputStream in = SMTC4J.class.getResourceAsStream(dllPath)) {
             if (in == null) {
