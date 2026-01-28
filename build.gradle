@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'dev.codeman'
-version = '0.0.3'
+version = '0.0.4'
 
 repositories {
     mavenCentral()
@@ -17,4 +17,27 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
     }
+}
+
+def nativeDir = file("$buildDir/resources/main/native")
+def dllFile = file("$nativeDir/SMTC4J.dll")
+
+tasks.register('downloadNative') {
+    doLast {
+        if (dllFile.exists()) return
+
+        nativeDir.mkdirs()
+
+        def tag = "v$version"
+        def url = "https://github.com/CodeManDev/SMTC4J/releases/download/${tag}/SMTC4J.dll"
+
+        println "Downloading native library from $url"
+        URI.create(url).toURL().withInputStream { i ->
+            dllFile.withOutputStream { it << i }
+        }
+    }
+}
+
+processResources {
+    dependsOn 'downloadNative'
 }
