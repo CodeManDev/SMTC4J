@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'dev.codeman'
-version = '0.0.5'
+version = '0.0.6'
 
 repositories {
     mavenCentral()
@@ -20,12 +20,13 @@ java {
 }
 
 def nativeDownloadDir = layout.buildDirectory.dir("native-download").get().asFile
-def nativeDllFile = nativeDownloadDir.toPath().resolve("SMTC4J.dll").toFile()
+def downloadedNativeDllFile = nativeDownloadDir.toPath().resolve("SMTC4J.dll").toFile()
 def resourcesNativeDir = layout.buildDirectory.dir("resources/main/native").get().asFile
+def nativeDllFile = file("src/main/resources/native/SMTC4J.dll") // for dev environment
 
 tasks.register("downloadNative") {
     doLast {
-        if (nativeDllFile.exists()) {
+        if (downloadedNativeDllFile.exists() || nativeDllFile.exists()) {
             println "Native DLL already exists, skipping download."
             return
         }
@@ -36,7 +37,7 @@ tasks.register("downloadNative") {
         println "Downloading native DLL from $url"
 
         new URL(url).withInputStream { input ->
-            nativeDllFile.withOutputStream { output ->
+            downloadedNativeDllFile.withOutputStream { output ->
                 output << input
             }
         }
@@ -45,8 +46,9 @@ tasks.register("downloadNative") {
 
 tasks.register("copyNativeIntoResources", Copy) {
     dependsOn "downloadNative"
-    from(nativeDllFile)
+    from(downloadedNativeDllFile)
     into(resourcesNativeDir)
+    onlyIf { downloadedNativeDllFile.exists() }
 }
 
 tasks.named("processResources") {

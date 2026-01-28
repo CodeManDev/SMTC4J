@@ -2,6 +2,7 @@ package dev.codeman.smtc4j;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 
 import java.io.*;
 import java.util.concurrent.Executors;
@@ -107,11 +108,12 @@ public class SMTC4J {
             return new MediaInfo("", "", "", 0, "", "");
         }
 
-        MediaInfo parsed = GSON.fromJson(info, MediaInfo.class);
-        if (parsed == null)
+        try  {
+            return GSON.fromJson(info, MediaInfo.class);
+        }  catch (JsonSyntaxException e) {
+            System.out.println("Error parsing media info: " + e.getMessage());
             return new MediaInfo("", "", "", 0, "", "");
-
-        return parsed;
+        }
     }
 
     public static PlaybackState parsedPlaybackState() {
@@ -124,11 +126,12 @@ public class SMTC4J {
             return new PlaybackState(-1, 0);
         }
 
-        PlaybackState parsed = GSON.fromJson(state, PlaybackState.class);
-        if (parsed == null)
+        try {
+            return GSON.fromJson(state, PlaybackState.class);
+        } catch (Exception e) {
+            System.out.println("Error retrieving playback state: " + e.getMessage());
             return new PlaybackState(-1, 0);
-
-        return parsed;
+        }
     }
 
     public static void pressKey(MediaKey key) {
