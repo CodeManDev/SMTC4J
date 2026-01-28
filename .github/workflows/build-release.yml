@@ -1,4 +1,4 @@
-name: Build Windows Native + Jar
+name: Build Windows Native + JAR
 
 permissions:
   contents: write
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup JDK
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -28,17 +28,24 @@ jobs:
       - name: Build DLL
         run: cmake --build build --config Release
 
-      - name: Copy DLL into resources
+      - name: Copy DLL into Java resources
         run: |
           mkdir -p src/main/resources/native
           copy build\Release\SMTC4J.dll src\main\resources\native\SMTC4J.dll
 
-      - name: Build JAR
+      - name: Build Java JAR
         run: ./gradlew clean build
 
-      - name: Publish JAR and DLL to GitHub Release
+      - name: Prepare release-artifacts folder
+        run: |
+          mkdir release-artifacts
+          copy build\Release\SMTC4J.dll release-artifacts\
+          copy build/libs/SMTC4J-${GITHUB_REF_NAME}.jar release-artifacts\
+
+      - name: List release artifacts
+        run: dir release-artifacts
+
+      - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            build/libs/SMTC4J-${{ github.ref_name }}.jar
-            build/Release/SMTC4J.dll
+          files: release-artifacts/*
