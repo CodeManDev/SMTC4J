@@ -32,6 +32,7 @@ jobs:
         run: |
           mkdir -p src/main/resources/native
           copy build\Release\SMTC4J.dll src\main\resources\native\SMTC4J.dll
+          copy build\Release\SMTC4J.dll .
 
       - name: Build Java JAR
         run: ./gradlew clean build
