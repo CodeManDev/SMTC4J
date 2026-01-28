@@ -29,25 +29,18 @@ jobs:
         run: cmake --build build --config Release
 
       - name: Copy DLL into Java resources
-        shell: pwsh
         run: |
-          New-Item -ItemType Directory -Path "src/main/resources/native" -Force
-          Copy-Item -Path "build/Release/SMTC4J.dll" -Destination "src/main/resources/native/SMTC4J.dll" -Force
+          mkdir -p src/main/resources/native
+          copy build\Release\SMTC4J.dll src\main\resources\native\SMTC4J.dll
 
       - name: Build Java JAR
         run: ./gradlew clean build
 
-      - name: Get Gradle version
-        id: gradle_version
-        run: |
-          echo "VERSION=$(./gradlew -q printVersion)" >> $GITHUB_ENV
-
       - name: Prepare release-artifacts folder
-        shell: pwsh
         run: |
-          New-Item -ItemType Directory -Path "release-artifacts" -Force
-          Copy-Item -Path "src/main/resources/native/SMTC4J.dll" -Destination "release-artifacts/SMTC4J.dll" -Force
-          Copy-Item -Path "build/libs/SMTC4J-$env:VERSION.jar" -Destination "release-artifacts/SMTC4J-$env:VERSION.jar" -Force
+          mkdir -p release-artifacts
+          copy src\main\resources\native\SMTC4J.dll release-artifacts/SMTC4J.dll
+          copy build/libs/SMTC4J-${{ github.ref_name }}.jar release-artifacts/SMTC4J-${{ github.ref_name }}.jar
 
       - name: List release artifacts
         run: dir release-artifacts
