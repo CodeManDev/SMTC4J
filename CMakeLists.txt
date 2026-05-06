@@ -22,3 +22,7 @@ target_link_libraries(SMTC4J
 if (MSVC)
     target_compile_options(SMTC4J PRIVATE /await)
 endif()
+
+set_target_properties(SMTC4J PROPERTIES
+    OUTPUT_NAME "SMTC4J"
+)
