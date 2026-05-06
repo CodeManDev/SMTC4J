@@ -78,6 +78,9 @@ Java_dev_codeman_smtc4j_SMTC4J_getPlaybackState(JNIEnv* env, jclass) {
         auto timeline = session.GetTimelineProperties();
         double smtcPosition = timeline.Position().count() / 10'000'000.0; // seconds
 
+        static auto cachedLastTimeLineUpdate = timeline.LastUpdatedTime().time_since_epoch();
+        auto lastTimeLineUpdate = timeline.LastUpdatedTime().time_since_epoch();
+
         static double cachedPosition = smtcPosition;
         static auto lastTime = std::chrono::steady_clock::now();
         auto now = std::chrono::steady_clock::now();
@@ -85,10 +88,11 @@ Java_dev_codeman_smtc4j_SMTC4J_getPlaybackState(JNIEnv* env, jclass) {
         double delta = std::chrono::duration<double>(now - lastTime).count(); // seconds
         lastTime = now;
 
-        if (stateCode == 2) {
-            cachedPosition += delta;
-        } else if (stateCode == 1 || stateCode == 0) {
+        if (lastTimeLineUpdate != cachedLastTimeLineUpdate || stateCode != 2) {
             cachedPosition = smtcPosition;
+            cachedLastTimeLineUpdate = lastTimeLineUpdate;
+        } else {
+            cachedPosition += delta;
         }
 
         double positionSec = cachedPosition;
