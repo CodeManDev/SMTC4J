@@ -10,11 +10,11 @@ using namespace winrt;
 using namespace Windows::Media::Control;
 using namespace Windows::Storage::Streams;
 
-static std::string base64Encode(const std::vector<uint8_t>& data) {
+static std::string base64Encode(const std::vector<uint8_t> &data) {
     static auto chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     std::string out;
     int val = 0, valb = -6;
-    for (uint8_t c : data) {
+    for (uint8_t c: data) {
         val = (val << 8) + c;
         valb += 8;
         while (valb >= 0) {
@@ -28,7 +28,7 @@ static std::string base64Encode(const std::vector<uint8_t>& data) {
     return out;
 }
 
-static std::string getThumbnailBase64(GlobalSystemMediaTransportControlsSessionMediaProperties const& mediaProps) {
+static std::string getThumbnailBase64(GlobalSystemMediaTransportControlsSessionMediaProperties const &mediaProps) {
     try {
         const auto thumbnail = mediaProps.Thumbnail();
         if (!thumbnail) return "";
@@ -51,13 +51,12 @@ static std::string getThumbnailBase64(GlobalSystemMediaTransportControlsSessionM
 }
 
 extern "C" {
-
 JNIEXPORT jstring JNICALL
-Java_dev_codeman_smtc4j_SMTC4J_getPlaybackState(JNIEnv* env, jclass) {
+Java_dev_codeman_smtc4j_SMTC4J_getPlaybackState(JNIEnv *env, jclass) {
     try {
         try {
             winrt::init_apartment();
-        } catch (const winrt::hresult_invalid_argument&) {
+        } catch (const winrt::hresult_invalid_argument &) {
         }
 
         const auto manager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
@@ -69,16 +68,21 @@ Java_dev_codeman_smtc4j_SMTC4J_getPlaybackState(JNIEnv* env, jclass) {
 
         int stateCode = 0;
         switch (status) {
-            case GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing: stateCode = 2; break;
-            case GlobalSystemMediaTransportControlsSessionPlaybackStatus::Paused:  stateCode = 1; break;
-            case GlobalSystemMediaTransportControlsSessionPlaybackStatus::Stopped: stateCode = 0; break;
-            default: stateCode = -1; break;
+            case GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing: stateCode = 2;
+                break;
+            case GlobalSystemMediaTransportControlsSessionPlaybackStatus::Paused: stateCode = 1;
+                break;
+            case GlobalSystemMediaTransportControlsSessionPlaybackStatus::Stopped: stateCode = 0;
+                break;
+            default: stateCode = -1;
+                break;
         }
 
         const auto timeline = session.GetTimelineProperties();
         double positionSec = timeline.Position().count() / 10'000'000.0; // to seconds
 
-        if (stateCode == 2) { // update position based on elapsed time while playing
+        if (stateCode == 2) {
+            // update position based on elapsed time while playing
             const auto lastUpdated = timeline.LastUpdatedTime().time_since_epoch();
             const auto now = winrt::clock::now().time_since_epoch();
             const auto deltaTicks = now.count() - lastUpdated.count();
@@ -86,13 +90,12 @@ Java_dev_codeman_smtc4j_SMTC4J_getPlaybackState(JNIEnv* env, jclass) {
         }
 
         const std::string json = "{"
-            "\"stateCode\":" + std::to_string(stateCode) + ","
-            "\"position\":" + std::to_string(positionSec) +
-        "}";
+                                 "\"stateCode\":" + std::to_string(stateCode) + ","
+                                 "\"position\":" + std::to_string(positionSec) +
+                                 "}";
 
         return env->NewStringUTF(json.c_str());
-
-    } catch (const winrt::hresult_error& e) {
+    } catch (const winrt::hresult_error &e) {
         std::string err = std::string(R"({"error":")") + winrt::to_string(e.message()) + "\"}";
         return env->NewStringUTF(err.c_str());
     } catch (...) {
@@ -101,11 +104,11 @@ Java_dev_codeman_smtc4j_SMTC4J_getPlaybackState(JNIEnv* env, jclass) {
 }
 
 JNIEXPORT jstring JNICALL
-Java_dev_codeman_smtc4j_SMTC4J_getMediaInfo(JNIEnv* env, jclass) {
+Java_dev_codeman_smtc4j_SMTC4J_getMediaInfo(JNIEnv *env, jclass) {
     try {
         try {
             winrt::init_apartment();
-        } catch (const winrt::hresult_invalid_argument&) {
+        } catch (const winrt::hresult_invalid_argument &) {
         }
 
         const auto manager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
@@ -120,17 +123,16 @@ Java_dev_codeman_smtc4j_SMTC4J_getMediaInfo(JNIEnv* env, jclass) {
         const auto sourceApp = winrt::to_string(session.SourceAppUserModelId());
 
         const std::string json = "{"
-            "\"title\":\"" + winrt::to_string(mediaProps.Title()) + "\","
-            "\"artist\":\"" + winrt::to_string(mediaProps.Artist()) + "\","
-            "\"album\":\"" + winrt::to_string(mediaProps.AlbumTitle()) + "\","
-            "\"duration\":" + std::to_string(durationSec) + ","
-            "\"sourceApp\":\"" + sourceApp + "\","
-            "\"thumbnailBase64\":\"" + thumbnailBase64 + "\""
-        "}";
+                                 "\"title\":\"" + winrt::to_string(mediaProps.Title()) + "\","
+                                 "\"artist\":\"" + winrt::to_string(mediaProps.Artist()) + "\","
+                                 "\"album\":\"" + winrt::to_string(mediaProps.AlbumTitle()) + "\","
+                                 "\"duration\":" + std::to_string(durationSec) + ","
+                                 "\"sourceApp\":\"" + sourceApp + "\","
+                                 "\"thumbnailBase64\":\"" + thumbnailBase64 + "\""
+                                 "}";
 
         return env->NewStringUTF(json.c_str());
-
-    } catch (const winrt::hresult_error& e) {
+    } catch (const winrt::hresult_error &e) {
         const std::string err = std::string(R"({"error":")") + winrt::to_string(e.message()) + "\"}";
         return env->NewStringUTF(err.c_str());
     } catch (...) {
@@ -138,4 +140,39 @@ Java_dev_codeman_smtc4j_SMTC4J_getMediaInfo(JNIEnv* env, jclass) {
     }
 }
 
+JNIEXPORT void JNICALL
+Java_dev_codeman_smtc4j_SMTC4J_pressMediaKey(JNIEnv *, jclass, jint keyCode) {
+    try {
+        try {
+            winrt::init_apartment();
+        } catch (const winrt::hresult_invalid_argument &) {
+        }
+
+        const auto manager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
+        const auto session = manager.GetCurrentSession();
+        if (!session) return;
+
+        switch (keyCode) {
+            case 0: // Play
+                session.TryPlayAsync().get();
+                break;
+            case 1: // Pause
+                session.TryPauseAsync().get();
+                break;
+            case 2: // Stop
+                session.TryStopAsync().get();
+                break;
+            case 3: // Next
+                session.TrySkipNextAsync().get();
+                break;
+            case 4: // Previous
+                session.TrySkipPreviousAsync().get();
+                break;
+            default:
+                break;
+        }
+    } catch (...) {
+        // Ignore exceptions for media key presses
+    }
+}
 }

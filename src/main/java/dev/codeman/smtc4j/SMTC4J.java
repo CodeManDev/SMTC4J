@@ -17,6 +17,7 @@ public class SMTC4J {
 
     private static native String getPlaybackState();
     private static native String getMediaInfo();
+    private static native void pressMediaKey(int keyCode);
 
     public static boolean load() {
         if (loaded) return true;
@@ -82,8 +83,7 @@ public class SMTC4J {
     }
 
     public static MediaInfo parsedMediaInfo() {
-        if (!isLoaded())
-            throw new IllegalStateException("SMTC4J native library is not loaded.");
+        checkIsLoaded();
 
         String info = getMediaInfo();
 
@@ -100,8 +100,7 @@ public class SMTC4J {
     }
 
     public static PlaybackState parsedPlaybackState() {
-        if (!isLoaded())
-            throw new IllegalStateException("SMTC4J native library is not loaded.");
+        checkIsLoaded();
 
         String state = getPlaybackState();
 
@@ -115,5 +114,16 @@ public class SMTC4J {
             return new PlaybackState(-1, 0);
 
         return parsed;
+    }
+
+    public static void pressKey(MediaKey key) {
+        checkIsLoaded();
+
+        pressMediaKey(key.ordinal());
+    }
+
+    private static void checkIsLoaded() {
+        if (!isLoaded())
+            throw new IllegalStateException("SMTC4J native library is not loaded.");
     }
 }
