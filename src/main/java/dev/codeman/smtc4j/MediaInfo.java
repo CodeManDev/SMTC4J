@@ -12,7 +12,7 @@ public record MediaInfo(String title, String artist, String album, double durati
                 ", album='" + this.album + '\'' +
                 ", duration=" + this.duration +
                 ", sourceApp='" + this.sourceApp + '\'' +
-                ", thumbnailBase64='" + this.thumbnailBase64 + '\'' +
+                ", thumbnailBase64 length: " + this.thumbnailBase64.length() +
                 '}';
     }
 

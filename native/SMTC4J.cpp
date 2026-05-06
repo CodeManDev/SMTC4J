@@ -4,6 +4,7 @@
 #include <winrt/Windows.Foundation.h>
 #include <string>
 #include <vector>
+#include <chrono>
 
 using namespace winrt;
 using namespace Windows::Media::Control;
@@ -75,7 +76,22 @@ Java_dev_codeman_smtc4j_SMTC4J_getPlaybackState(JNIEnv* env, jclass) {
         }
 
         auto timeline = session.GetTimelineProperties();
-        double positionSec = timeline.Position().count() / 10'000'000.0;
+        double smtcPosition = timeline.Position().count() / 10'000'000.0; // seconds
+
+        static double cachedPosition = smtcPosition;
+        static auto lastTime = std::chrono::steady_clock::now();
+        auto now = std::chrono::steady_clock::now();
+
+        double delta = std::chrono::duration<double>(now - lastTime).count(); // seconds
+        lastTime = now;
+
+        if (stateCode == 2) {
+            cachedPosition += delta;
+        } else if (stateCode == 1 || stateCode == 0) {
+            cachedPosition = smtcPosition;
+        }
+
+        double positionSec = cachedPosition;
 
         std::string json = "{"
             "\"stateCode\":" + std::to_string(stateCode) + ","
