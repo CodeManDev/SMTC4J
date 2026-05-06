@@ -1,0 +1,44 @@
+name: Build Windows Native + Jar
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Configure CMake
+        run: cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build DLL
+        run: cmake --build build --config Release
+
+      - name: Copy DLL into resources
+        run: |
+          mkdir -p src/main/resources/native
+          copy build\Release\SMTC4J.dll src\main\resources\native\SMTC4J.dll
+
+      - name: Build JAR
+        run: ./gradlew clean build
+
+      - name: Publish JAR and DLL to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/libs/SMTC4J-${{ github.ref_name }}.jar
+            build/Release/SMTC4J.dll
