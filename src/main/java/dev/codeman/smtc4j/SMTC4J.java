@@ -103,6 +103,9 @@ public class SMTC4J {
 
         String info = getMediaInfo();
 
+        if (info.equals("{}"))
+            return new MediaInfo("", "", "", 0, "", "");
+
         if (info.contains("\"error\":")) {
             System.out.println("Error retrieving media info: " + info);
             return new MediaInfo("", "", "", 0, "", "");
@@ -120,6 +123,9 @@ public class SMTC4J {
         checkIsLoaded();
 
         String state = getPlaybackState();
+
+        if (state.equals("{}"))
+            return new PlaybackState(-1, 0);
 
         if (state.contains("\"error\":")) {
             System.out.println("Error retrieving playback state: " + state);
