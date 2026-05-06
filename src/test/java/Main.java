@@ -16,7 +16,7 @@ public class Main {
             return;
         }
 
-        SMTC4J.startUpdateThread(1000);
+        SMTC4J.startUpdateScheduler(1000);
 
         int i = 0;
 
@@ -34,7 +34,7 @@ public class Main {
 
             if (i % 5 == 0) {
                 MediaKey keyToPress = MediaKey.values()[ThreadLocalRandom.current().nextInt(0, MediaKey.values().length)];
-                SMTC4J.pressKey(keyToPress);
+                SMTC4J.scheduleKeyPress(keyToPress);
                 System.out.println("Pressed key: " + keyToPress.name());
             }
 

@@ -4,13 +4,17 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class SMTC4J {
 
     private static final Gson GSON = new GsonBuilder().create();
 
     private static boolean loaded = false;
-    private static Thread updateThread = null;
+
+    private static ScheduledExecutorService scheduler = null;
 
     private static MediaInfo lastMediaInfo = null;
     private static PlaybackState lastPlaybackState = null;
@@ -50,6 +54,17 @@ public class SMTC4J {
         return loaded;
     }
 
+    private static synchronized ScheduledExecutorService getScheduler() {
+        if (scheduler == null || scheduler.isShutdown()) {
+            scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "SMTC4J-Executor");
+                t.setDaemon(true);
+                return t;
+            });
+        }
+        return scheduler;
+    }
+
     public static MediaInfo getCachedMediaInfo() {
         return lastMediaInfo;
     }
@@ -59,27 +74,17 @@ public class SMTC4J {
     }
 
     public static void updateCache() {
+        checkIsLoaded();
+
         lastMediaInfo = parsedMediaInfo();
         lastPlaybackState = parsedPlaybackState();
     }
 
-    public static void startUpdateThread(long intervalMillis) {
-        if (updateThread != null && updateThread.isAlive())
-            return;
+    public static synchronized void startUpdateScheduler(long intervalMillis) {
+        checkIsLoaded();
 
-        updateThread = new Thread(() -> {
-            while (true) {
-                try {
-                    updateCache();
-                    Thread.sleep(intervalMillis);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            }
-        }, "SMTC4J-Update-Thread");
-        updateThread.setDaemon(true);
-        updateThread.start();
+        ScheduledExecutorService exec = getScheduler();
+        exec.scheduleAtFixedRate(SMTC4J::updateCache, 0, intervalMillis, TimeUnit.MILLISECONDS);
     }
 
     public static MediaInfo parsedMediaInfo() {
@@ -120,6 +125,12 @@ public class SMTC4J {
         checkIsLoaded();
 
         pressMediaKey(key.ordinal());
+    }
+
+    public static void scheduleKeyPress(MediaKey key) {
+        checkIsLoaded();
+
+        getScheduler().execute(() -> pressKey(key));
     }
 
     private static void checkIsLoaded() {
