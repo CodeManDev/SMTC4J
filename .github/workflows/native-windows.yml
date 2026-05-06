@@ -1,5 +1,8 @@
 name: Build Windows Native
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
