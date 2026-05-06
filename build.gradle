@@ -32,8 +32,7 @@ tasks.register("downloadNative") {
         }
 
         nativeDownloadDir.mkdirs()
-        def tag = "v$version"
-        def url = "https://github.com/CodeManDev/SMTC4J/releases/download/${tag}/SMTC4J.dll"
+        def url = "https://github.com/CodeManDev/SMTC4J/releases/download/${version}/SMTC4J.dll"
         println "Downloading native DLL from $url"
 
         new URL(url).withInputStream { input ->
