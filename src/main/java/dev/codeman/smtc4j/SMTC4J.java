@@ -14,6 +14,7 @@ public class SMTC4J {
     private static final Gson GSON = new GsonBuilder().create();
 
     private static boolean loaded = false;
+    private static boolean debug = false;
 
     private static ScheduledExecutorService scheduler = null;
 
@@ -23,6 +24,10 @@ public class SMTC4J {
     private static native String getPlaybackState();
     private static native String getMediaInfo();
     private static native void pressMediaKey(int keyCode);
+
+    public static void setDebug(boolean debug) {
+        SMTC4J.debug = debug;
+    }
 
     public static boolean load() {
         if (loaded) return true;
@@ -92,8 +97,10 @@ public class SMTC4J {
             try {
                 updateCache();
             } catch (Exception e) {
-                System.err.println("Error updating SMTC4J cache: " + e.getMessage());
-                e.printStackTrace(System.err);
+                if (debug) {
+                    System.err.println("Error updating SMTC4J cache: " + e.getMessage());
+                    e.printStackTrace(System.err);
+                }
             }
         }, 0, intervalMillis, TimeUnit.MILLISECONDS);
     }
@@ -107,14 +114,14 @@ public class SMTC4J {
             return new MediaInfo("", "", "", 0, "", "");
 
         if (info.contains("\"error\":")) {
-            System.out.println("Error retrieving media info: " + info);
+            if (debug) System.out.println("Error retrieving media info: " + info);
             return new MediaInfo("", "", "", 0, "", "");
         }
 
         try  {
             return GSON.fromJson(info, MediaInfo.class);
         }  catch (JsonSyntaxException e) {
-            System.out.println("Error parsing media info: " + e.getMessage());
+            if (debug) System.out.println("Error parsing media info: " + e.getMessage());
             return new MediaInfo("", "", "", 0, "", "");
         }
     }
@@ -128,14 +135,14 @@ public class SMTC4J {
             return new PlaybackState(-1, 0);
 
         if (state.contains("\"error\":")) {
-            System.out.println("Error retrieving playback state: " + state);
+            if (debug) System.out.println("Error retrieving playback state: " + state);
             return new PlaybackState(-1, 0);
         }
 
         try {
             return GSON.fromJson(state, PlaybackState.class);
         } catch (Exception e) {
-            System.out.println("Error retrieving playback state: " + e.getMessage());
+            if (debug) System.out.println("Error retrieving playback state: " + e.getMessage());
             return new PlaybackState(-1, 0);
         }
     }
@@ -153,8 +160,10 @@ public class SMTC4J {
             try {
                 pressKey(key);
             } catch (Exception e) {
-                System.err.println("Error pressing media key: " + e.getMessage());
-                e.printStackTrace(System.err);
+                if (debug) {
+                    System.err.println("Error pressing media key: " + e.getMessage());
+                    e.printStackTrace(System.err);
+                }
             }
         });
     }
