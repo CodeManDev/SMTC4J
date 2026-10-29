@@ -19,6 +19,10 @@ java {
     }
 }
 
+tasks.named("jar") {
+    archiveVersion = ""
+}
+
 def nativeDownloadDir = layout.buildDirectory.dir("native-download").get().asFile
 def downloadedNativeDllFile = nativeDownloadDir.toPath().resolve("SMTC4J.dll").toFile()
 def resourcesNativeDir = layout.buildDirectory.dir("resources/main/native").get().asFile
