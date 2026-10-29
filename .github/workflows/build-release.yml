@@ -40,7 +40,7 @@ jobs:
         run: |
           mkdir -p release-artifacts
           copy src\main\resources\native\SMTC4J.dll release-artifacts/SMTC4J.dll
-          copy build/libs/SMTC4J-${{ github.ref_name }}.jar release-artifacts/SMTC4J-${{ github.ref_name }}.jar
+          copy build/libs/SMTC4J.jar release-artifacts/SMTC4J-${{ github.ref_name }}.jar
 
       - name: List release artifacts
         run: dir release-artifacts
